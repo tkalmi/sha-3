@@ -42,17 +42,18 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		TODO: Implement SPONGE
 		TODO: Profit?
 	 */
-	 unsigned char state_arr[5][5][1600/25];
+	 unsigned char state_arr[5][5][1600/25/8]; // Init state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=1600/25/8 bytes). As the input msg is in bytes, we'll use that format. 
 	 
 	 create_state_array(state_arr, m); // Initialize state array
+	 
 }
 
 /* Initialize state array
  * state_arr - pointer to state array placeholder
  * m - the input message
  */
-void create_state_array(unsigned char (*state_arr)[5][1600/25], const unsigned char *m) {
-	unsigned int x, y, z, w=1600/25, i=0, m_len=strlen((const char *)m);
+void create_state_array(unsigned char (*state_arr)[5][1600/25/8], const unsigned char *m) {
+	unsigned int x, y, z, w=1600/25/8, i=0, m_len=strlen((const char *)m);
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 			for (z = 0; z < w; z++) {
