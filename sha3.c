@@ -32,7 +32,6 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 
 	/* Implement the rest of this function */
 	/* We'll implement only the SHA3-256, with width 1600 and round number 24 for now... */
-	/* TODO: Create state array */
 	/* TODO: Create Rnd-function:
 			-TODO: Create theta
 			-TODO: Create rho
@@ -57,8 +56,8 @@ void create_state_array(unsigned char (*state_arr)[5][1600/25], const unsigned c
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 			for (z = 0; z < w; z++) {
+				i = w * (5 * y + x) + z;
 				state_arr[x][y][z] = i < m_len ? m[i] : 0;
-				i++;
 			}
 		}
 	}
