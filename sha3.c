@@ -43,28 +43,20 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		TODO: Implement SPONGE
 		TODO: Profit?
 	 */
-	unsigned char state_arr[5][5][1600/25];
+	 unsigned char state_arr[5][5][1600/25];
 	 
-	unsigned int x, y, z, w=1600/25, i=0, m_len=strlen((const char *)m);
-	for (y = 0; i < 5; i++) {
-		for (x = 0; x < 5; x++) {
-		 	for (z = 0; z < w; z++) {
-		 		state_arr[x][y][z] = i < m_len ? m[i] : 0;
-		 		i++;
-		 	}
-		}
-	}
-	printf("Original m: %s\n", m);
-	for (int i = 0; i < 5; i++) {
-		for (int j = 0; j < 5; j++) {
-			printf("lane %d-%d:", i, j);
+	 create_state_array(state_arr, m); // Initialize state array
+	 printf("Original m: %s\n", m);
+	 for (int i = 0; i < 5; i++) {
+	 	for (int j = 0; j < 5; j++) {
+	 		printf("lane %d-%d:", i, j);
 	 		for (int k = 0; k < 1600/25; k++) {
 	 			printf(" %02x", state_arr[j][i][k]);
 	 		}
 	 		printf("\n");
 	 	}
-	}
-	printf("\n\n");
+	 }
+	 printf("\n\n");
 }
 
 /* Initialize state array
@@ -73,10 +65,11 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
  */
 void create_state_array(unsigned char (*state_arr)[5][1600/25], const unsigned char *m) {
 	unsigned int x, y, z, w=1600/25, i=0, m_len=strlen((const char *)m);
-	for (y = 0; i < 5; i++) {
+	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 			for (z = 0; z < w; z++) {
 				state_arr[x][y][z] = i < m_len ? m[i] : 0;
+				printf("i: %d, m_len: %d, state_arr[x][y][z]: %02x\n", i, m_len, state_arr[x][y][z]);
 				i++;
 			}
 		}
