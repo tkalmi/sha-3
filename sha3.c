@@ -33,16 +33,12 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 
 	/* Implement the rest of this function */
 	/* We'll implement only the SHA3-256, with width 1600 and round number 24 for now... */
-	/* TODO: Create Rnd-function:
-			-TODO: Create theta
-			-TODO: Create rho
-			-TODO: Create: pi
-			-TODO: Create chi,
-			-TODO: Create iota
+	/*
 		TODO: Implement SPONGE
 		TODO: Profit?
 	 */
-	 unsigned char state_arr[5][5][1600/25/8]; // Initialize state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=1600/25/8 bytes). As the input msg is in bytes, we'll use that format. 
+	 unsigned char w = 1600/25/8, w_log = log(w) / log(2); // w_log is the 'l' in documentation
+	 unsigned char state_arr[5][5][w]; // Initialize state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=1600/25/8 bytes). As the input msg is in bytes, we'll use that format. 
 	 
 	 create_state_array(state_arr, m); // Populate initial state array with input message
 	 
@@ -51,10 +47,25 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 	  */
 	 unsigned char n_r = 24, i_r;
 	 
-	 for (i_r = 0; i_r < n_r; i_r++) {
+	 for (i_r = 12 + 2*w_log - n_r; i_r < 12 + 2*w_log - 1; i_r++) {
 	 	rnd_fun(state_arr, i_r);
 	 }
-	 
+	 unsigned char s_dot[5 * 5 * w];
+	 convert_state_arr_to_str(s_dot, state_arr);
+	 sponge(d, s, s_dot);
+	 (void) l;
+}
+
+/* Implement SPONGE construct to truncate/pad the input string to an output string of
+ * length d
+ * Z - pointer output string
+ * d - length of output string (in bits)
+ * N - input string
+ */
+void sponge(unsigned char *Z, unsigned int d, unsigned char *N) {
+	//unsigned char *padded;
+	//pad10x1(*padded, N, strlen(N));
+	//concatenate(*Z, N, strlen(N) * 8, padded, strlen(padded) * 8);
 }
 
 /* Populate initial state array with input message
@@ -73,6 +84,22 @@ void create_state_array(unsigned char (*state_arr)[5][1600/25/8], const unsigned
 	}
 	
 }
+
+/* Convert state array to string
+ * s_dot - pointer to ouput string
+ * state_arr - state array
+ */
+ void convert_state_arr_to_str(unsigned char *s_dot, unsigned char (*state_arr)[5][1600/25/8]) {
+ 	unsigned char i = 0, y, x, z, w = 1600/25/8;
+ 	for (y = 0; y < 5; y++) {
+ 		for (x = 0; x < 5; x++) {
+ 			for (z = 0; z < w; z++) {
+ 				s_dot[i] = state_arr[x][y][z];
+ 				i++;
+ 			}
+ 		}
+ 	}
+ }
 
 /* Do one iteration of the Rnd function
  * state_arr - pointer to state array

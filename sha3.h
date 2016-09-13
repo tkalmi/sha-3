@@ -50,3 +50,17 @@ void chi(unsigned char (*state_arr)[5][1600/25/8]);
  * i_r - round index
  */
 void iota(unsigned char (*state_arr)[5][1600/25/8], unsigned char i_r);
+
+/* Convert state array to string
+ * s_dot - pointer to ouput string
+ * state_arr - state array
+ */
+ void convert_state_arr_to_str(unsigned char *s_dot, unsigned char (*state_arr)[5][1600/25/8]);
+ 
+ /* Implement SPONGE construct to truncate/pad the input string to an output string of
+  * length d
+  * Z - pointer output string
+  * d - length of output string (in bits)
+  * N - input string
+  */
+ void sponge(unsigned char *Z, unsigned int d, unsigned char *N);
