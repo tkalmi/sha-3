@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #include "sha3.h"
 
 /* Useful macros */
@@ -38,17 +39,25 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 			-TODO: Create: pi
 			-TODO: Create chi,
 			-TODO: Create iota
-		TODO: Loop Rnd-function appropriate times
 		TODO: Implement SPONGE
 		TODO: Profit?
 	 */
-	 unsigned char state_arr[5][5][1600/25/8]; // Init state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=1600/25/8 bytes). As the input msg is in bytes, we'll use that format. 
+	 unsigned char state_arr[5][5][1600/25/8]; // Initialize state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=1600/25/8 bytes). As the input msg is in bytes, we'll use that format. 
 	 
-	 create_state_array(state_arr, m); // Initialize state array
+	 create_state_array(state_arr, m); // Populate initial state array with input message
+	 
+	 /* n_r - Number of Rnd-function iterations
+	  * i_r - Round index
+	  */
+	 unsigned char n_r = 24, i_r;
+	 
+	 for (i_r = 0; i_r < n_r; i_r++) {
+	 	rnd_fun(state_arr, i_r);
+	 }
 	 
 }
 
-/* Initialize state array
+/* Populate initial state array with input message
  * state_arr - pointer to state array placeholder
  * m - the input message
  */
@@ -64,6 +73,107 @@ void create_state_array(unsigned char (*state_arr)[5][1600/25/8], const unsigned
 	}
 	
 }
+
+/* Do one iteration of the Rnd function
+ * state_arr - pointer to state array
+ * i_r - round index
+ */
+void rnd_fun(unsigned char (*state_arr)[5][1600/25/8], unsigned char i_r) {
+	theta(state_arr);
+	rho(state_arr);
+	pi(state_arr);
+	chi(state_arr);
+	iota(state_arr, i_r);
+}
+
+/* Do theta permutation
+ * state_arr - state array
+ */
+void theta(unsigned char (*state_arr)[5][1600/25/8]) {
+	int x, y, z, w=1600/25/8;
+	unsigned char C[5][w],  D[5][w];
+	for (x = 0; x < 5; x++) {
+		for (z = 0; z < w; z++) {
+			C[x][z] = state_arr[x][0][z] ^ state_arr[x][1][z] ^ state_arr[x][2][z] ^ state_arr[x][3][z] ^ state_arr[x][4][z];
+		}
+	}
+	for (x = 0; x < 5; x++) {
+		for (z = 0; z < 8; z++) {
+			D[x][z] = C[(x - 1) % 5][z] ^ C[(x + 1) % 5][(z - 1) % w];
+		}
+	}
+	for (y = 0; y < 5; y++) {
+		for (x = 0; x < 5; x++) {
+			for (z = 0; z < w; z++) {
+				state_arr[x][y][z] ^= D[x][z];
+			}
+		}
+	}
+	
+}
+
+/* Do rho permutation
+ * state_arr - state array
+ */
+void rho(unsigned char (*state_arr)[5][1600/25/8]) {
+	unsigned char t, z, x = 1, y = 0, tmp, w = 1600/25/8;
+	unsigned char state_arr_cpy[5][5][w];
+	memcpy(state_arr_cpy, state_arr, sizeof(unsigned char) * 5 * 5 * w);
+	for (t = 0; t < 24; t++) {
+		for (z = 0; z < w; z++) {
+			state_arr[x][y][z] = state_arr_cpy[x][y][(z - (t + 1)*(t + 2) / 2) % w];
+			tmp = x;
+			x = y;
+			y = (2*tmp + 3*y) % 5;
+		}
+	}
+}
+
+/* Do pi permutation
+ * state_arr - state array
+ */
+void pi(unsigned char (*state_arr)[5][1600/25/8]) {
+	unsigned char x, y, z, w = 1600/25/8;
+	unsigned char state_arr_cpy[5][5][w];
+	memcpy(state_arr_cpy, state_arr, sizeof(unsigned char) * 5 * 5 * w);
+	for (y = 0; y < 5; y++) {
+		for (x = 0; x < 5; x++) {
+			for (z = 0; z < w; z++) {
+				state_arr[x][y][z] = state_arr_cpy[(x + 3 * y) % 5][x][z];
+			}
+		}
+	}
+}
+
+/* Do chi permutation
+ * state_arr - state array
+ */
+void chi(unsigned char (*state_arr)[5][1600/25/8]) {
+	unsigned char x, y, z, w=1600/25/8;
+	unsigned char state_arr_cpy[5][5][w];
+	for (y = 0; y < 5; y++) {
+		for (x = 0; x < 5; x++) {
+			for (z = 0; z < w; z++) {
+				state_arr[x][y][z] = state_arr_cpy[x][y][z] ^ ((state_arr_cpy[(x+1)%5][y][z] ^ 1) * state_arr_cpy[(x+2)%5][y][z]);
+			}
+		}
+	}
+}
+
+/* Do iota permutation
+ * state_arr - state array
+ * i_r - round index
+ */
+void iota(unsigned char (*state_arr)[5][1600/25/8], unsigned char i_r) {
+	unsigned char j, z, w = 1600/25/8, l = log(w) / log(2);
+	unsigned char RC[w];
+	for (j = 0; j < l; j++) {
+		RC[(int)pow(2.0, (double)j) - 1] = rc(j + 7 * i_r);
+	}
+	for (z = 0; z < w; z++) {
+		state_arr[0][0][z] = state_arr[0][0][z] ^ RC[z];
+	}
+} 
 
 /* Concatenate two bit strings (X||Y)
  *
