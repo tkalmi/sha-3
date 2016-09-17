@@ -96,7 +96,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		 	printf("\n");
 		 }
 	 }
-	
+	 
 	 unsigned char s_dot[5 * 5 * w];
 	 convert_state_arr_to_str(s_dot, &state_arr);
 	 sponge(d, s, s_dot);
