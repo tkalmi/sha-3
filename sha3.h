@@ -45,6 +45,12 @@ void pi(unsigned char (*state_arr)[5][5][1600/25/8]);
  */
 void chi(unsigned char (*state_arr)[5][5][1600/25/8]);
 
+/* Compute power for integers
+ * int n - base
+ * int x - exponent
+ */
+int int_pow(int n, int x);
+
 /* Do iota permutation
  * state_arr - state array
  * i_r - round index

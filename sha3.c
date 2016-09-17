@@ -46,7 +46,6 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 	  * i_r - Round index
 	  */
 	 int n_r = 24, i_r;
-	 int count = 0;
 	 printf("Message: %s\n", m);
 	 for (i_r = 12 + 2*w_log - n_r; i_r < 12 + 2*w_log - 1; i_r++) {
 	 	printf("\n-- ROUND %d --\n", i_r+8);
@@ -123,6 +122,7 @@ void sponge(unsigned char *Z, unsigned int d, unsigned char *N) {
 	//unsigned char *padded;
 	//pad10x1(*padded, N, strlen(N));
 	//concatenate(*Z, N, strlen(N) * 8, padded, strlen(padded) * 8);
+	(void)Z;(void)d;(void)N;
 }
 
 /* Populate initial state array with input message
@@ -244,18 +244,31 @@ void chi(unsigned char (*state_arr)[5][5][8]) {
 	}
 }
 
+/* Compute power for integers
+ * int n - base
+ * int x - exponent
+ */
+int int_pow(int n, int x) {
+	int result = 1;
+	for (int i = 0; i < x; i++) {
+		result *= n;
+	}
+	return result;
+}
+
 /* Do iota permutation
  * state_arr - state array
  * i_r - round index
  */
 void iota(unsigned char (*state_arr)[5][5][8], int i_r) {
-	unsigned char j, z, w = 8, l = log(w) / log(2);
+	unsigned int j, z, w = 8, l = log(w) / log(2);
 	unsigned char RC[w];
 	for (j = 0; j < l; j++) {
-		RC[(int)pow(2.0, (double)j) - 1] = rc(j + 7 * i_r);
+		RC[int_pow(2, j) - 1] = rc(j + 7 * i_r);
 	}
 	for (z = 0; z < w; z++) {
-		(*state_arr)[0][0][z] = (*state_arr)[0][0][z] ^ RC[z];
+		(*state_arr)[0][0][z] ^= RC[z];
+		printf("%0x", RC[z]);
 	}
 } 
 
