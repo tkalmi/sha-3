@@ -38,7 +38,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		TODO: Profit?
 	 */
 	 int w = 8, w_log = 6; // w_log is the 'l' in documentation w_log = log2(w) = log2(64) = 6
-	 unsigned long state_arr[5][5]; // Initialize state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=8 bytes). As the input msg is in bytes, we'll use that format. 
+	 unsigned long long state_arr[5][5]; // Initialize state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=8 bytes). As the input msg is in bytes, we'll use that format. 
 	 
 	 create_state_array(&state_arr, m); // Populate initial state array with input message
 	 
@@ -49,7 +49,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 	 printf("Message: %s\n", m);
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[jj][ii]);
+		 			printf("%016llx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -59,7 +59,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter theta:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[jj][ii]);
+		 			printf("%016llx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -67,7 +67,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter rho:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[jj][ii]);
+		 			printf("%016llx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -75,7 +75,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter pi:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[jj][ii]);
+		 			printf("%016llx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -83,7 +83,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter chi:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[jj][ii]);
+		 			printf("%016llx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -91,7 +91,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter iota:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[jj][ii]);
+		 			printf("%016llx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -120,9 +120,9 @@ void sponge(unsigned char *Z, unsigned int d, unsigned char *N) {
  * state_arr - pointer to state array placeholder
  * m - the input message
  */
-void create_state_array(unsigned long (*state_arr)[5][5], const unsigned char *m) {
+void create_state_array(unsigned long long (*state_arr)[5][5], const unsigned char *m) {
 	unsigned int x, y, z, w=8, i, m_len=strlen((const char *)m);
-	unsigned long lane;
+	unsigned long long lane;
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 			lane = 0;
@@ -141,7 +141,7 @@ void create_state_array(unsigned long (*state_arr)[5][5], const unsigned char *m
  * s_dot - pointer to ouput string
  * state_arr - pointer to state array
  */
- void convert_state_arr_to_str(unsigned char *s_dot, unsigned long (*state_arr)[5][5]) {
+ void convert_state_arr_to_str(unsigned char *s_dot, unsigned long long (*state_arr)[5][5]) {
  	unsigned char i = 0, y, x;
  	for (y = 0; y < 5; y++) {
  		for (x = 0; x < 5; x++) {
@@ -154,9 +154,9 @@ void create_state_array(unsigned long (*state_arr)[5][5], const unsigned char *m
 /* Do theta permutation
  * state_arr - pointer to state array
  */
-void theta(unsigned long (*state_arr)[5][5]) {
+void theta(unsigned long long (*state_arr)[5][5]) {
 	int x, y, z, w=64;
-	unsigned long C[5],  D[5] = {0}, XOR;
+	unsigned long long C[5],  D[5] = {0}, XOR;
 	for (x = 0; x < 5; x++) {
 			C[x] = (*state_arr)[x][0] ^ (*state_arr)[x][1] ^ (*state_arr)[x][2] ^ (*state_arr)[x][3] ^ (*state_arr)[x][4];
 	}
@@ -178,31 +178,34 @@ void theta(unsigned long (*state_arr)[5][5]) {
 /* Do rho permutation
  * state_arr - pointer to state array
  */
-void rho(unsigned long (*state_arr)[5][5]) {
+void rho(unsigned long long (*state_arr)[5][5]) {
 	unsigned char t, z, x = 1, y = 0, tmp, w = 64;
-	unsigned long state_arr_cpy[5][5], curr_bit;
-	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long) * 5 * 5);
-	(*state_arr)[x][y] = 0; // let (x,y) = (1,0)
+	unsigned long long state_arr_cpy[5][5], curr_bit;
+	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long long) * 5 * 5);
+	
 	for (t = 0; t < 24; t++) {
+		(*state_arr)[x][y] = 0; // let (x,y) = (1,0)
 		for (z = 0; z < w; z++) {
 			/* Attention! n % y returns negative int, if n < 0 and y > 0! Thus, add y to n to ensure proper behavior! */
-			curr_bit = state_arr_cpy[x][y] & (unsigned long ) 1 << ((z - (t + 1)*(t + 2) / 2 + w) % w); // Mask, to get only the curr_bit 
+			curr_bit = ROL64(state_arr_cpy[x][y], w - ((z - (t + 1)*(t + 2) / 2 + w) % w));
+			curr_bit &= 1; // Mask, to get only the curr_bit 
+			curr_bit = ROL64(curr_bit, z);
 			(*state_arr)[x][y] += curr_bit;
-			/* let (x,y) = (y, (2x + 3y) mod 5) */
-			tmp = x;
-			x = y;
-			y = (2*tmp + 3*y) % 5;
 		}
+		/* let (x,y) = (y, (2x + 3y) mod 5) */
+		tmp = x;
+		x = y;
+		y = (2*tmp + 3*y) % 5;		
 	}
 }
 
 /* Do pi permutation
  * state_arr - pointer to state array
  */
-void pi(unsigned long (*state_arr)[5][5]) {
+void pi(unsigned long long (*state_arr)[5][5]) {
 	unsigned char x, y;
-	unsigned long state_arr_cpy[5][5];
-	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long) * 5 * 5);
+	unsigned long long state_arr_cpy[5][5];
+	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long long) * 5 * 5);
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 				(*state_arr)[x][y] = state_arr_cpy[(x + 3 * y) % 5][x];
@@ -213,10 +216,10 @@ void pi(unsigned long (*state_arr)[5][5]) {
 /* Do chi permutation
  * state_arr - pointer to state array
  */
-void chi(unsigned long (*state_arr)[5][5]) {
+void chi(unsigned long long (*state_arr)[5][5]) {
 	unsigned char x, y;
-	unsigned long state_arr_cpy[5][5];
-	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long) * 5 * 5);
+	unsigned long long state_arr_cpy[5][5];
+	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long long) * 5 * 5);
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 				(*state_arr)[x][y] = state_arr_cpy[x][y] ^ ((state_arr_cpy[(x+1)%5][y] ^ 1) * state_arr_cpy[(x+2)%5][y]);
@@ -227,6 +230,7 @@ void chi(unsigned long (*state_arr)[5][5]) {
 /* Compute power for integers
  * int n - base
  * int x - exponent
+ * return - pow(base, result)
  */
 int int_pow(int n, int x) {
 	int result = 1;
@@ -240,9 +244,9 @@ int int_pow(int n, int x) {
  * state_arr - pointer to state array
  * i_r - round index
  */
-void iota(unsigned long (*state_arr)[5][5], int i_r) {
+void iota(unsigned long long (*state_arr)[5][5], int i_r) {
 	int j, l = 6; // l = log2(w) = log2(64) = 6
-	unsigned long RC = 0;
+	unsigned long long RC = 0;
 	//printf("i_r: %d\n", i_r);
 	for (j = 0; j < l; j++) {
 		//printf("j: %d -> rc(%d): %0x", j, j+7*i_r, rc(j + 7 * i_r));
