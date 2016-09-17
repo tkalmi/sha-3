@@ -73,12 +73,12 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		 }
 		pi(&state_arr);
 		printf("After pi:\n");
-		 for (ii = 0; ii < 5; ii++) {
-		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llx ",state_arr[jj][ii]);
-		 	}
-		 	printf("\n");
-		 }
+		for (ii = 0; ii < 5; ii++) {
+			for (jj = 0; jj < 5; jj++) {
+				printf("%016llx ",state_arr[jj][ii]);
+			}
+			printf("\n");
+		}
 		chi(&state_arr);
 		printf("After chi:\n");
 		 for (ii = 0; ii < 5; ii++) {
