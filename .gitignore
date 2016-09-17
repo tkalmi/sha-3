@@ -1,6 +1,4 @@
+*~
 log.txt
 sha3_driver
 *.o
-*.c~
-*.h~
-.gitignore~

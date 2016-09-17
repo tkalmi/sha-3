@@ -3,3 +3,4 @@ sha3_driver
 *.o
 *.c~
 *.h~
+.gitignore~
