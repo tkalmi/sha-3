@@ -37,7 +37,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		TODO: Implement SPONGE
 		TODO: Profit?
 	 */
-	 int w = 8, w_log = log(w) / log(2); // w_log is the 'l' in documentation
+	 int w = 8, w_log = 6; // w_log is the 'l' in documentation w_log = log2(w) = log2(64) = 6
 	 unsigned long state_arr[5][5]; // Initialize state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=8 bytes). As the input msg is in bytes, we'll use that format. 
 	 
 	 create_state_array(&state_arr, m); // Populate initial state array with input message
@@ -45,47 +45,53 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 	 /* n_r - Number of Rnd-function iterations
 	  * i_r - Round index
 	  */
-	 int n_r = 24, i_r;
+	 int n_r = 24, i_r, ii, jj;
 	 printf("Message: %s\n", m);
+		 for (ii = 0; ii < 5; ii++) {
+		 	for (jj = 0; jj < 5; jj++) {
+		 			printf("%016lx ",state_arr[ii][jj]);
+		 	}
+		 	printf("\n");
+		 }
 	 for (i_r = 12 + 2*w_log - n_r; i_r < 12 + 2*w_log - 1; i_r++) {
-	 	printf("\n-- ROUND %d --\n", i_r+8);
+	 	printf("\n-- ROUND %d --\n", i_r);
 		theta(&state_arr);
 		printf("\nAfter theta:\n");
-		 for (int ii = 0; ii < 5; ii++) {
-		 	for (int jj = 0; jj < 5; jj++) {
-		 			printf("%0lx ",state_arr[ii][jj]);
+		 for (ii = 0; ii < 5; ii++) {
+		 	for (jj = 0; jj < 5; jj++) {
+		 			printf("%016lx ",state_arr[ii][jj]);
 		 	}
 		 	printf("\n");
 		 }
 		rho(&state_arr);
 		printf("\nAfter rho:\n");
-		 for (int ii = 0; ii < 5; ii++) {
-		 	for (int jj = 0; jj < 5; jj++) {
-		 			printf("%0lx ",state_arr[ii][jj]);
+		 for (ii = 0; ii < 5; ii++) {
+		 	for (jj = 0; jj < 5; jj++) {
+		 			printf("%016lx ",state_arr[ii][jj]);
 		 	}
 		 	printf("\n");
 		 }
 		pi(&state_arr);
 		printf("\nAfter pi:\n");
-		 for (int ii = 0; ii < 5; ii++) {
-		 	for (int jj = 0; jj < 5; jj++) {
-		 			printf("%0lx ",state_arr[ii][jj]);
+		 for (ii = 0; ii < 5; ii++) {
+		 	for (jj = 0; jj < 5; jj++) {
+		 			printf("%016lx ",state_arr[ii][jj]);
 		 	}
 		 	printf("\n");
 		 }
 		chi(&state_arr);
 		printf("\nAfter chi:\n");
-		 for (int ii = 0; ii < 5; ii++) {
-		 	for (int jj = 0; jj < 5; jj++) {
-		 			printf("%0lx ",state_arr[ii][jj]);
+		 for (ii = 0; ii < 5; ii++) {
+		 	for (jj = 0; jj < 5; jj++) {
+		 			printf("%016lx ",state_arr[ii][jj]);
 		 	}
 		 	printf("\n");
 		 }
 		iota(&state_arr, i_r);
 		printf("\nAfter iota:\n");
-		 for (int ii = 0; ii < 5; ii++) {
-		 	for (int jj = 0; jj < 5; jj++) {
-		 			printf("%0lx ",state_arr[ii][jj]);
+		 for (ii = 0; ii < 5; ii++) {
+		 	for (jj = 0; jj < 5; jj++) {
+		 			printf("%016lx ",state_arr[ii][jj]);
 		 	}
 		 	printf("\n");
 		 }
@@ -150,7 +156,7 @@ void create_state_array(unsigned long (*state_arr)[5][5], const unsigned char *m
  */
 void theta(unsigned long (*state_arr)[5][5]) {
 	int x, y, z, w=64;
-	unsigned long C[5],  D[5], XOR;
+	unsigned long C[5],  D[5] = {0}, XOR;
 	for (x = 0; x < 5; x++) {
 			C[x] = (*state_arr)[x][0] ^ (*state_arr)[x][1] ^ (*state_arr)[x][2] ^ (*state_arr)[x][3] ^ (*state_arr)[x][4];
 	}
@@ -235,14 +241,16 @@ int int_pow(int n, int x) {
  * i_r - round index
  */
 void iota(unsigned long (*state_arr)[5][5], int i_r) {
-	unsigned int j, z, w = 64, l = log(w) / log(2);
+	int j, l = 6; // l = log2(w) = log2(64) = 6
 	unsigned long RC = 0;
+	//printf("i_r: %d\n", i_r);
 	for (j = 0; j < l; j++) {
+		//printf("j: %d -> rc(%d): %0x", j, j+7*i_r, rc(j + 7 * i_r));
 		RC += ROL64(rc(j + 7 * i_r), int_pow(2, j) - 1);
+		//printf(" -> RC + %ld %ld\n", (unsigned long)int_pow(2, int_pow(2,j) - 1) * rc(j + 7 * i_r), RC);
 	}
-	for (z = 0; z < w; z++) {
-		(*state_arr)[0][0] ^= RC;
-	}
+	//printf("\nRC: %016lx \n", RC);
+	(*state_arr)[0][0] ^= RC;
 } 
 
 /* Concatenate two bit strings (X||Y)
