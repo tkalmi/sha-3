@@ -49,7 +49,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 	 printf("Message: %s\n", m);
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[ii][jj]);
+		 			printf("%016lx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -59,7 +59,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter theta:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[ii][jj]);
+		 			printf("%016lx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -67,7 +67,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter rho:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[ii][jj]);
+		 			printf("%016lx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -75,7 +75,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter pi:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[ii][jj]);
+		 			printf("%016lx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -83,7 +83,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter chi:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[ii][jj]);
+		 			printf("%016lx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -91,7 +91,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("\nAfter iota:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016lx ",state_arr[ii][jj]);
+		 			printf("%016lx ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
