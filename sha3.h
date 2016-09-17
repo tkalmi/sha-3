@@ -17,33 +17,27 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
  * state_arr - pointer to state array placeholder
  * m - the input message
  */
-void create_state_array(unsigned char (*state_arr)[5][5][1600/25/8], const unsigned char *m);
-
-/* Do one iteration of the Rnd function
- * state_arr - pointer to state array
- * i_r - round index
- */
-void rnd_fun(unsigned char (*state_arr)[5][5][1600/25/8], unsigned char i_r);
+void create_state_array(unsigned long (*state_arr)[5][5], const unsigned char *m);
 
 /* Do theta permutation
  * state_arr - state array
  */
-void theta(unsigned char (*state_arr)[5][5][1600/25/8]);
+void theta(unsigned long (*state_arr)[5][5]);
 
 /* Do rho permutation
  * state_arr - state array
  */
-void rho(unsigned char (*state_arr)[5][5][1600/25/8]);
+void rho(unsigned long (*state_arr)[5][5]);
 
 /* Do pi permutation
  * state_arr - state array
  */
-void pi(unsigned char (*state_arr)[5][5][1600/25/8]);
+void pi(unsigned long (*state_arr)[5][5]);
 
 /* Do chi permutation
  * state_arr - state array
  */
-void chi(unsigned char (*state_arr)[5][5][1600/25/8]);
+void chi(unsigned long (*state_arr)[5][5]);
 
 /* Compute power for integers
  * int n - base
@@ -55,13 +49,13 @@ int int_pow(int n, int x);
  * state_arr - state array
  * i_r - round index
  */
-void iota(unsigned char (*state_arr)[5][5][1600/25/8], int i_r);
+void iota(unsigned long (*state_arr)[5][5], int i_r);
 
 /* Convert state array to string
  * s_dot - pointer to ouput string
  * state_arr - state array
  */
- void convert_state_arr_to_str(unsigned char *s_dot, unsigned char (*state_arr)[5][5][1600/25/8]);
+ void convert_state_arr_to_str(unsigned char *s_dot, unsigned long (*state_arr)[5][5]);
  
  /* Implement SPONGE construct to truncate/pad the input string to an output string of
   * length d
