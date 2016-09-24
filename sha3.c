@@ -248,11 +248,12 @@ void iota(unsigned long long (*state_arr)[5][5], int i_r) {
 	int j, l = 6; // l = log2(w) = log2(64) = 6
 	unsigned long long RC = 0;
 	//printf("i_r: %d\n", i_r);
-	for (j = 0; j < l; j++) {
+	for (j = 0; j <= l; j++) {
 		//printf("j: %d -> rc(%d): %0x", j, j+7*i_r, rc(j + 7 * i_r));
 		RC += ROL64(rc(j + 7 * i_r), int_pow(2, j) - 1);
 		//printf(" -> RC + %ld %ld\n", (unsigned long)int_pow(2, int_pow(2,j) - 1) * rc(j + 7 * i_r), RC);
 	}
+	printf("\nRound constant RC[%d]: %016llx\n", i_r, RC);
 	//printf("\nRC: %016lx \n", RC);
 	(*state_arr)[0][0] ^= RC;
 } 
