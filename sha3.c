@@ -218,17 +218,18 @@ void pi(unsigned long long (*state_arr)[5][5]) {
  */
 void chi(unsigned long long (*state_arr)[5][5]) {
 	unsigned char x, y, z, w = 64;
-	unsigned long long ll_1 = 1; // Create 64 bit 1
+	unsigned long long long_1 = 1; // Create 64 bit 1
 	unsigned long long first_term, second_term, third_term;
 	unsigned long long state_arr_cpy[5][5];
 	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long long) * 5 * 5);
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
+			(*state_arr)[x][y] = 0;
 			for (z = 0; z < w; z++) {
-				first_term = state_arr_cpy[x][y] & ROL64(ll_1, z); // A[x,y,z]
-				second_term = (state_arr_cpy[(x+1)%5][y] & ROL64(ll_1, z)) ^ ROL64(ll_1, z); // A[(x+1) mod 5, y, z] XOR 1
-				third_term = state_arr_cpy[(x+2)%5][y] & ROL64(ll_1, z); // A[(x+2) mod 5, y, z]
-				(*state_arr)[x][y] += (first_term ^ second_term) & third_term;
+				first_term = state_arr_cpy[x][y] & ROL64(long_1, z); // A[x,y,z]
+				second_term = (state_arr_cpy[(x+1)%5][y] & ROL64(long_1, z)) ^ ROL64(long_1, z); // A[(x+1) mod 5, y, z] XOR 1
+				third_term = state_arr_cpy[(x+2)%5][y] & ROL64(long_1, z); // A[(x+2) mod 5, y, z]
+				(*state_arr)[x][y] += first_term ^ (second_term & third_term);
 			}
 		}
 	}
