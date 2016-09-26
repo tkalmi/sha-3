@@ -49,17 +49,17 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 	 printf("Message: %s\n", m);
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llx ",state_arr[jj][ii]);
+		 			printf("%016llX ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
 	 for (i_r = 12 + 2*w_log - n_r; i_r < 12 + 2*w_log - 1; i_r++) {
-	 	printf("\n-- ROUND %d --\n\n", i_r);
+	 	printf("\n--- Round %d ---\n\n", i_r);
 		theta(&state_arr);
 		printf("After theta:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llx ",state_arr[jj][ii]);
+		 			printf("%016llX ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -67,7 +67,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("After rho:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llx ",state_arr[jj][ii]);
+		 			printf("%016llX ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -75,7 +75,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("After pi:\n");
 		for (ii = 0; ii < 5; ii++) {
 			for (jj = 0; jj < 5; jj++) {
-				printf("%016llx ",state_arr[jj][ii]);
+				printf("%016llX ",state_arr[jj][ii]);
 			}
 			printf("\n");
 		}
@@ -83,7 +83,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("After chi:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llx ",state_arr[jj][ii]);
+		 			printf("%016llX ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -91,7 +91,7 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 		printf("After iota:\n");
 		 for (ii = 0; ii < 5; ii++) {
 		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llx ",state_arr[jj][ii]);
+		 			printf("%016llX ",state_arr[jj][ii]);
 		 	}
 		 	printf("\n");
 		 }
@@ -217,12 +217,19 @@ void pi(unsigned long long (*state_arr)[5][5]) {
  * state_arr - pointer to state array
  */
 void chi(unsigned long long (*state_arr)[5][5]) {
-	unsigned char x, y;
+	unsigned char x, y, z, w = 64;
+	unsigned long long ll_1 = 1; // Create 64 bit 1
+	unsigned long long first_term, second_term, third_term;
 	unsigned long long state_arr_cpy[5][5];
 	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long long) * 5 * 5);
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
-				(*state_arr)[x][y] = state_arr_cpy[x][y] ^ ((state_arr_cpy[(x+1)%5][y] ^ 1) * state_arr_cpy[(x+2)%5][y]);
+			for (z = 0; z < w; z++) {
+				first_term = state_arr_cpy[x][y] & ROL64(ll_1, z); // A[x,y,z]
+				second_term = (state_arr_cpy[(x+1)%5][y] & ROL64(ll_1, z)) ^ ROL64(ll_1, z); // A[(x+1) mod 5, y, z] XOR 1
+				third_term = state_arr_cpy[(x+2)%5][y] & ROL64(ll_1, z); // A[(x+2) mod 5, y, z]
+				(*state_arr)[x][y] += (first_term ^ second_term) & third_term;
+			}
 		}
 	}
 }
@@ -253,7 +260,7 @@ void iota(unsigned long long (*state_arr)[5][5], int i_r) {
 		RC += ROL64(rc(j + 7 * i_r), int_pow(2, j) - 1);
 		//printf(" -> RC + %ld %ld\n", (unsigned long)int_pow(2, int_pow(2,j) - 1) * rc(j + 7 * i_r), RC);
 	}
-	printf("\nRound constant RC[%d]: %016llx\n", i_r, RC);
+	//printf("\nRound constant RC[%d]: %016llx\n", i_r, RC);
 	//printf("\nRC: %016lx \n", RC);
 	(*state_arr)[0][0] ^= RC;
 } 
