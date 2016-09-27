@@ -45,62 +45,29 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 	 /* n_r - Number of Rnd-function iterations
 	  * i_r - Round index
 	  */
-	 int n_r = 24, i_r, ii, jj;
-	 printf("Message: %s\n", m);
-		 for (ii = 0; ii < 5; ii++) {
-		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llX ",state_arr[jj][ii]);
-		 	}
-		 	printf("\n");
-		 }
-	 for (i_r = 12 + 2*w_log - n_r; i_r < 12 + 2*w_log - 1; i_r++) {
-	 	printf("\n--- Round %d ---\n\n", i_r);
+	 int n_r = 24, i_r;
+	 for (i_r = 12 + 2*w_log - n_r; i_r <= 12 + 2*w_log - 1; i_r++) {
 		theta(&state_arr);
-		printf("After theta:\n");
-		 for (ii = 0; ii < 5; ii++) {
-		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llX ",state_arr[jj][ii]);
-		 	}
-		 	printf("\n");
-		 }
 		rho(&state_arr);
-		printf("After rho:\n");
-		 for (ii = 0; ii < 5; ii++) {
-		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llX ",state_arr[jj][ii]);
-		 	}
-		 	printf("\n");
-		 }
 		pi(&state_arr);
-		printf("After pi:\n");
-		for (ii = 0; ii < 5; ii++) {
-			for (jj = 0; jj < 5; jj++) {
-				printf("%016llX ",state_arr[jj][ii]);
-			}
-			printf("\n");
-		}
 		chi(&state_arr);
-		printf("After chi:\n");
-		 for (ii = 0; ii < 5; ii++) {
-		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llX ",state_arr[jj][ii]);
-		 	}
-		 	printf("\n");
-		 }
 		iota(&state_arr, i_r);
-		printf("After iota:\n");
-		 for (ii = 0; ii < 5; ii++) {
-		 	for (jj = 0; jj < 5; jj++) {
-		 			printf("%016llX ",state_arr[jj][ii]);
-		 	}
-		 	printf("\n");
-		 }
 	 }
 	 
 	 unsigned char s_dot[5 * 5 * w];
 	 convert_state_arr_to_str(s_dot, &state_arr);
+	 
 	 sponge(d, s, s_dot);
 	 (void) l;
+}
+
+/* Implement KECCAK-p[b,n_r](S)
+ * S - string S of length b
+ * n_r - number of rounds
+ * S_mod - pointer to crypted string
+ */
+void KECCAK(unsigned long long *S_mod, unsigned char *S) {
+
 }
 
 /* Implement SPONGE construct to truncate/pad the input string to an output string of
@@ -108,11 +75,31 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
  * Z - pointer output string
  * d - length of output string (in bits)
  * N - input string
+ * r - rate parameter
  */
-void sponge(unsigned char *Z, unsigned int d, unsigned char *N) {
-	//unsigned char *padded;
-	//pad10x1(*padded, N, strlen(N));
-	//concatenate(*Z, N, strlen(N) * 8, padded, strlen(padded) * 8);
+void sponge(unsigned char *Z, unsigned int d, unsigned char *N, int r) {
+	/* TODO: this is mockup */
+	int b = 1600, c = b - r, n, i;
+	unsigned char *padding, *P, S[b], P_i[r+1], *P_i_concat, *Z;
+	pad10x1(*padding, r, strlen(N)); // pad(r, len(N))
+	concatenate(*P, N, strlen(N) * 8, *padding, strlen(padding) * 8); // N || pad(r, len(N))
+	n = strlen(P) / r; // len(P)/r
+	/* P = sequence of strings (each's length = r) from 0 to n-1 */
+	for (i = 0; i < n; i++) {
+		memcpy(P_i, &P[i * r + 1], r);
+		P_i[r] = '\0';
+		concatenate(*P_i_concat, P_i, (r+1) * 8, arr_of_zeros, c);
+		KECCAK(*S, S ^ P_i_concat);
+	}
+	/*while (1) {
+		concatenate(*Z, Z, r Trunc(r, S)); // Z = Z || Trunc_r(S)
+		if (d <= Z) {
+			return Trunc(d, Z);
+		}
+		S = f(S);
+		// Continue with step 8 
+	}*/
+	
 	(void)Z;(void)d;(void)N;
 }
 
@@ -142,11 +129,13 @@ void create_state_array(unsigned long long (*state_arr)[5][5], const unsigned ch
  * state_arr - pointer to state array
  */
  void convert_state_arr_to_str(unsigned char *s_dot, unsigned long long (*state_arr)[5][5]) {
- 	unsigned char i = 0, y, x;
+ 	unsigned char i = 0, y, x, z;
  	for (y = 0; y < 5; y++) {
  		for (x = 0; x < 5; x++) {
-			s_dot[i] = (*state_arr)[x][y];
-			i++;
+ 			for (z = 0; z < 8; z++) {
+				s_dot[i] = (unsigned char) (ROL64((*state_arr)[x][y], 64 - z * 8) & (unsigned long long) 255);
+				i++;
+ 			}
  		}
  	}
  }

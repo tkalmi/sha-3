@@ -62,5 +62,6 @@ void iota(unsigned long long (*state_arr)[5][5], int i_r);
   * Z - pointer output string
   * d - length of output string (in bits)
   * N - input string
+  * r - rate parameter
   */
- void sponge(unsigned char *Z, unsigned int d, unsigned char *N);
+ void sponge(unsigned char *Z, unsigned int d, unsigned char *N, int rate);
