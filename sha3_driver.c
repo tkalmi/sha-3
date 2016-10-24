@@ -76,18 +76,8 @@ int main(void)
 
 	unsigned char d[32];
 
-	int ii;
 	for (int i = 0; i < 5; i++) {
 		sha3(d, 256, message[i], len[i]);
-		printf("\nYour answer: \n");
-		for (ii=0; ii < 32; ii++) {
-			printf("%02x ", d[ii]);
-		}
-		printf("\nCorrect answer: \n");
-		for (ii = 0; ii < 32; ii++) {
-			printf("%02x ", digest[i][ii]);
-		}
-		printf("\n");
 		printf("%s\n", !memcmp(d, digest[i], 32) ? "PASS" : "FAIL");
 	}
 

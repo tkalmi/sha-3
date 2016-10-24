@@ -29,41 +29,24 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m, unsigned int
 
 	/* Implement the rest of this function */
 
-	// Concatenate m || 01 as is defined in SHA-3 specs
-	unsigned char *M;
-	// printf("\nM Before concatenate_01:\n");
-	// for (unsigned int j = 0; j < l/8; j++) {
-	// 	printf("%02x ", m[j]);
-	// }
-	// printf("\n");
-	concatenate_01(&M, m, l);
-	// printf("\nM After concatenate_01:\n");
-	// for (unsigned int k = 0; k < l/8 + 1; k++) {
-	// 	printf("%02x ", M[k]);
-	// }
-	// printf("\n");
+	unsigned char *M, *sponge_input;
 
-	unsigned char *sponge_input;
+
+	concatenate_01(&M, m, l); // Concatenate m || 01 as is defined in SHA-3 specs
+
 	sponge_input = (unsigned char *)malloc(256/8);
-	// Call SPONGE
-	sponge(&sponge_input, M, s, l+2);
+	sponge(&sponge_input, M, s, l+2); // l+2 due to 2 extra bits we concatenated with the input message above
 	memcpy(d, sponge_input, 256/8);
-			printf("\nSPONGE output:\n");
-			for (unsigned int i = 0; i < s/8; i++) {
-				printf("%02x ", d[i]);
-			}
-			printf("\n");
 	free(sponge_input);
 }
 
 /* Implement KECCAK-p[b,n_r](S)
  * m - input string of length b
  * S - pointer to KECCAK-modified string
- * l - length of m
  */
-void keccak_p(unsigned char (*S)[200], unsigned char *m, int l) {
-	unsigned long long state_arr[5][5]; // Initialize state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=8 bytes). As the input msg is in bytes, we'll use that format.
-	 create_state_array(&state_arr, m); // Populate initial state array with input message
+void keccak_p(unsigned char (*S)[200], unsigned char *m) {
+	unsigned long long state_arr[5][5];
+	 create_state_array(&state_arr, m); // Populate initial state array with the input message
 
 	 /* n_r - Number of Rnd-function iterations
 	  * i_r - Round index
@@ -71,20 +54,6 @@ void keccak_p(unsigned char (*S)[200], unsigned char *m, int l) {
 	 int n_r = 24, i_r, w_log = 6;
 	 for (i_r = 12 + 2*w_log - n_r; i_r <= 12 + 2*w_log - 1; i_r++) {
 		theta(&state_arr);
-				// convert_state_arr_to_str((*S), &state_arr);
-				// printf("\nAfter theta:\n");
-				// for (unsigned int i = 0; i < 200; i++) {
-				// 		printf("%02x ", (*S)[i]);
-				// }
-				// printf("\n");
-				// printf("\n");
-				// printf("\nState array after theta:\n");
-				// for (unsigned int ii = 0; ii < 5; ii++) {
-				// 	for (unsigned int jj = 0; jj < 5; jj++) {
-				// 		printf("%016llx ", state_arr[jj][ii]);
-				// 	}
-				// 	printf("\n");
-				// }
 		rho(&state_arr);
 		pi(&state_arr);
 		chi(&state_arr);
@@ -92,16 +61,7 @@ void keccak_p(unsigned char (*S)[200], unsigned char *m, int l) {
 	 }
 
 	 // Convert state array back to a string
-	//  unsigned char s_dot[200];
 	 convert_state_arr_to_str((*S), &state_arr);
-	//  int ii;//, jj;
-	//  printf("\n Keccak output message:\n");
-	//  for (ii = 0; ii < 200; ii++) {
-	//  	printf("%02x ", (*S)[ii]);
-	//  }
-	 (void) l;
-	 // Copy converted string to output string pointer
-	//  memcpy(S, s_dot, l);
 }
 
 /* Implement SPONGE construct to truncate/pad the input string to an output string of
@@ -113,53 +73,39 @@ void keccak_p(unsigned char (*S)[200], unsigned char *m, int l) {
  */
 void sponge(unsigned char **Z, unsigned char *N, unsigned int d, int l) {
 	int b = 1600, r = 1088, c = 512, n, i, j;
-	unsigned char *padding, *P, *P_i, *P_i_concat;
-	P_i = (unsigned char *) malloc(1088/8);
-	unsigned char S[200] = {0}, S_cpy[200], arr_of_zeros[64] = {0}, S_XOR_P_i_concat[200], S_Trunc_r[1088 / 8];
-	unsigned long pad_length = pad10x1(&padding, r, l), P_len, Z_len = 0; // pad(r, len(N))
-	unsigned int ii;
-	// printf("pad_length: %ld\n", pad_length);
+	unsigned char *padding, *P, *P_i;
+	unsigned char S[200] = {0}, S_cpy[200], arr_of_zeros[64] = {0}, S_XOR[200], S_Trunc_r[1088 / 8];
+	unsigned long pad_length, P_len, Z_len = 0;
+
+	pad_length = pad10x1(&padding, r, l); // pad(r, len(N))
 	P_len = concatenate(&P, N, l, padding, pad_length); // N || pad(r, len(N))
 	n = P_len / r; // len(P)/r
-	printf("\nn == %d\n", n);
+
 	/* P = sequence of strings (length of each = r) from 0 to n-1 */
 	for (i = 0; i < n; i++) {
-		memcpy(P_i, &P[i * r/8], r/8);
-		concatenate(&P_i_concat, P_i, r, arr_of_zeros, c); // P_i || 0^c
+		concatenate(&P_i, &P[i * r/8], r, arr_of_zeros, c); // P_i || 0^c
 		for (j = 0; j < b/8; j++) {
-			S_XOR_P_i_concat[j] = S[j] ^ P_i_concat[j]; // S XOR P_i || 0^c
+			S_XOR[j] = S[j] ^ P_i[j]; // S XOR P_i || 0^c
 		}
 
-		keccak_p(&S, S_XOR_P_i_concat, 200); // f(S XOR (P_i || 0^c))
-				// printf("\nS after KECCAK:\n");
-				// for (ii = 0; ii < (unsigned int)b / 8; ii++) {
-				// 	printf("%02x ", S[ii]);
-				// }
-				// printf("\n");
+		keccak_p(&S, S_XOR); // f(S XOR (P_i || 0^c))
 	}
 
-		ii = 0;
 	while (1) {
 		memcpy(S_Trunc_r, S, r/8);
 		Z_len = concatenate(Z, (*Z), Z_len, S_Trunc_r, r); // Z = Z || Trunc_r(S)
 		if (d <= Z_len) {
 			(*Z) = (unsigned char *) realloc((*Z), d/8);
-					// printf("\nZ:\n");
-					// for (ii = 0; ii < (unsigned int)Z_len/8; ii++) {
-					// 	printf("%02x ", (*Z)[ii]);
-					// }
-					// printf("\n");
 			break;
 		}
-		memcpy(S_cpy, S, 200);
-		keccak_p(&S, S_cpy, 200);
+		memcpy(S_cpy, S, b/8);
+		keccak_p(&S, S_cpy);
 		// Continue with step 8
-		ii++;
 	}
+	/* Free dynamically allocated memory */
 	free(P);
 	free(P_i);
 	free(padding);
-	free(P_i_concat);
 }
 
 /* Populate initial state array with input message
@@ -201,7 +147,7 @@ void create_state_array(unsigned long long (*state_arr)[5][5], const unsigned ch
  }
 
 /* Do theta permutation
- * state_arr - pointer to state array
+ * state_arr - pointer to the state array
  */
 void theta(unsigned long long (*state_arr)[5][5]) {
 	int x, y, z, w=64;
@@ -225,7 +171,7 @@ void theta(unsigned long long (*state_arr)[5][5]) {
 }
 
 /* Do rho permutation
- * state_arr - pointer to state array
+ * state_arr - pointer to the state array
  */
 void rho(unsigned long long (*state_arr)[5][5]) {
 	unsigned char t, z, x = 1, y = 0, tmp, w = 64;
@@ -249,7 +195,7 @@ void rho(unsigned long long (*state_arr)[5][5]) {
 }
 
 /* Do pi permutation
- * state_arr - pointer to state array
+ * state_arr - pointer to the state array
  */
 void pi(unsigned long long (*state_arr)[5][5]) {
 	unsigned char x, y;
@@ -263,7 +209,7 @@ void pi(unsigned long long (*state_arr)[5][5]) {
 }
 
 /* Do chi permutation
- * state_arr - pointer to state array
+ * state_arr - pointer to the state array
  */
 void chi(unsigned long long (*state_arr)[5][5]) {
 	unsigned char x, y, z, w = 64;
@@ -298,17 +244,14 @@ int int_pow(int n, int x) {
 }
 
 /* Do iota permutation
- * state_arr - pointer to state array
+ * state_arr - pointer to the state array
  * i_r - round index
  */
 void iota(unsigned long long (*state_arr)[5][5], int i_r) {
 	int j, l = 6; // l = log2(w) = log2(64) = 6
 	unsigned long long RC = 0;
-	//printf("i_r: %d\n", i_r);
 	for (j = 0; j <= l; j++) {
-		//printf("j: %d -> rc(%d): %0x", j, j+7*i_r, rc(j + 7 * i_r));
 		RC += ROL64(rc(j + 7 * i_r), int_pow(2, j) - 1);
-		//printf(" -> RC + %ld %ld\n", (unsigned long)int_pow(2, int_pow(2,j) - 1) * rc(j + 7 * i_r), RC);
 	}
 	(*state_arr)[0][0] ^= RC;
 }

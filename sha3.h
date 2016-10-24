@@ -27,9 +27,8 @@ void sponge(unsigned char **Z, unsigned char *N, unsigned int d, int l);
 /* Implement KECCAK-p[b,n_r](S)
  * m - input string of length b
  * S - pointer to KECCAK-modified string
- * l - length of m
  */
-void keccak_p(unsigned char (*S)[200], unsigned char *m, int l);
+void keccak_p(unsigned char (*S)[200], unsigned char *m);
 
 /* Populate initial state array with input message
  * state_arr - pointer to state array placeholder
