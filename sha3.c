@@ -132,7 +132,7 @@ void create_state_array(unsigned long long (*state_arr)[5][5], const unsigned ch
 
 /* Convert state array to string
  * s_dot - pointer to ouput string
- * state_arr - pointer to state array
+ * state_arr - pointer to the state array
  */
  void convert_state_arr_to_str(unsigned char *s_dot, unsigned long long (*state_arr)[5][5]) {
  	unsigned char i = 0, y, x, z;
