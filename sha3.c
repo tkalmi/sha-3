@@ -176,7 +176,7 @@ void create_state_array(unsigned long long (*state_arr)[5][5], const unsigned ch
 				i = w * (5 * y + x) + z;
 				lane += ROL64((unsigned long long) m[i], z*8); // chars in m are 8-bit chunks. Rotate
 			}
-			printf("lane[%d,%d]: %016llx\n", x,y,lane);
+			// printf("lane[%d,%d]: %016llx\n", x,y,lane);
 			(*state_arr)[x][y] = lane; //i < m_len ? m[i] : 0;
 
 		}
