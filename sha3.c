@@ -124,7 +124,7 @@ void sponge(unsigned char **Z, unsigned char *N, unsigned int d, int l) {
 	printf("\nn == %d\n", n);
 	/* P = sequence of strings (length of each = r) from 0 to n-1 */
 	for (i = 0; i < n; i++) {
-		memcpy(P_i, &P[i * r], r/8);
+		memcpy(P_i, &P[i * r/8], r/8);
 		concatenate(&P_i_concat, P_i, r, arr_of_zeros, c); // P_i || 0^c
 		for (j = 0; j < b/8; j++) {
 			S_XOR_P_i_concat[j] = S[j] ^ P_i_concat[j]; // S XOR P_i || 0^c
