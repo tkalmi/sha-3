@@ -9,11 +9,8 @@
 /* Rotate a 64b word to the left by n positions */
 #define ROL64(a, n) ((((n)%64) != 0) ? ((((uint64_t)a) << ((n)%64)) ^ (((uint64_t)a) >> (64-((n)%64)))) : a)
 
-unsigned long concatenate(unsigned char **Z, const unsigned char *X,
-			  unsigned long X_len, const unsigned char *Y,
-			  unsigned long Y_len);
-unsigned long concatenate_01(unsigned char **Z, const unsigned char *X,
-			     unsigned long X_len);
+unsigned long concatenate(unsigned char **Z, const unsigned char *X, unsigned long X_len, const unsigned char *Y, unsigned long Y_len);
+unsigned long concatenate_01(unsigned char **Z, const unsigned char *X, unsigned long X_len);
 unsigned long pad10x1(unsigned char **P, unsigned int x, unsigned int m);
 unsigned char rc(unsigned int t);
 
@@ -24,21 +21,39 @@ unsigned char rc(unsigned int t);
  * m - the input message
  * l - size of the input message in bits
  */
-void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
-	  unsigned int l)
+void sha3(unsigned char *d, unsigned int s, const unsigned char *m, unsigned int l)
 {
 	/* The hash size must be one of the supported ones */
 	if (s != 224 && s != 256 && s != 384 && s != 512)
 		return;
 
 	/* Implement the rest of this function */
-	
+
 	// Concatenate m || 01 as is defined in SHA-3 specs
 	unsigned char *M;
+	// printf("\nM Before concatenate_01:\n");
+	// for (unsigned int j = 0; j < l/8; j++) {
+	// 	printf("%02x ", m[j]);
+	// }
+	// printf("\n");
 	concatenate_01(&M, m, l);
-	
+	// printf("\nM After concatenate_01:\n");
+	// for (unsigned int k = 0; k < l/8 + 1; k++) {
+	// 	printf("%02x ", M[k]);
+	// }
+	// printf("\n");
+
+	unsigned char *sponge_input;
+	sponge_input = (unsigned char *)malloc(256/8);
 	// Call SPONGE
-	sponge(d, M, s, l);
+	sponge(&sponge_input, M, s, l+2);
+	memcpy(d, sponge_input, 256/8);
+			printf("\nSPONGE output:\n");
+			for (unsigned int i = 0; i < s/8; i++) {
+				printf("%02x ", d[i]);
+			}
+			printf("\n");
+	free(sponge_input);
 }
 
 /* Implement KECCAK-p[b,n_r](S)
@@ -47,28 +62,46 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
  * l - length of m
  */
 void keccak_p(unsigned char (*S)[200], unsigned char *m, int l) {
-	unsigned long long state_arr[5][5]; // Initialize state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=8 bytes). As the input msg is in bytes, we'll use that format. 
-	 
+	unsigned long long state_arr[5][5]; // Initialize state array. It consists of 1600 bits in the format of 5 * 5 (=25) lanes. That makes the length of each lane 1600/25 bits (=8 bytes). As the input msg is in bytes, we'll use that format.
 	 create_state_array(&state_arr, m); // Populate initial state array with input message
-	 
+
 	 /* n_r - Number of Rnd-function iterations
 	  * i_r - Round index
 	  */
 	 int n_r = 24, i_r, w_log = 6;
 	 for (i_r = 12 + 2*w_log - n_r; i_r <= 12 + 2*w_log - 1; i_r++) {
 		theta(&state_arr);
+				// convert_state_arr_to_str((*S), &state_arr);
+				// printf("\nAfter theta:\n");
+				// for (unsigned int i = 0; i < 200; i++) {
+				// 		printf("%02x ", (*S)[i]);
+				// }
+				// printf("\n");
+				// printf("\n");
+				// printf("\nState array after theta:\n");
+				// for (unsigned int ii = 0; ii < 5; ii++) {
+				// 	for (unsigned int jj = 0; jj < 5; jj++) {
+				// 		printf("%016llx ", state_arr[jj][ii]);
+				// 	}
+				// 	printf("\n");
+				// }
 		rho(&state_arr);
 		pi(&state_arr);
 		chi(&state_arr);
 		iota(&state_arr, i_r);
 	 }
-	 
+
 	 // Convert state array back to a string
-	 unsigned char s_dot[l];
-	 convert_state_arr_to_str(s_dot, &state_arr);
-	 
+	//  unsigned char s_dot[200];
+	 convert_state_arr_to_str((*S), &state_arr);
+	//  int ii;//, jj;
+	//  printf("\n Keccak output message:\n");
+	//  for (ii = 0; ii < 200; ii++) {
+	//  	printf("%02x ", (*S)[ii]);
+	//  }
+	 (void) l;
 	 // Copy converted string to output string pointer
-	 memcpy(S, s_dot, l);
+	//  memcpy(S, s_dot, l);
 }
 
 /* Implement SPONGE construct to truncate/pad the input string to an output string of
@@ -78,40 +111,51 @@ void keccak_p(unsigned char (*S)[200], unsigned char *m, int l) {
  * d - length of output string (in bits)
  * l - length of N in bits
  */
-void sponge(unsigned char *Z, unsigned char *N, unsigned int d, int l) {
+void sponge(unsigned char **Z, unsigned char *N, unsigned int d, int l) {
 	int b = 1600, r = 1088, c = 512, n, i, j;
 	unsigned char *padding, *P, *P_i, *P_i_concat;
-	P_i = (unsigned char *) malloc(1088);
-	unsigned char S[200], arr_of_zeros[64] = {0}, S_XOR_P_i_concat[200], S_Trunc_r[1088];
+	P_i = (unsigned char *) malloc(1088/8);
+	unsigned char S[200] = {0}, S_cpy[200], arr_of_zeros[64] = {0}, S_XOR_P_i_concat[200], S_Trunc_r[1088 / 8];
 	unsigned long pad_length = pad10x1(&padding, r, l), P_len, Z_len = 0; // pad(r, len(N))
+	unsigned int ii;
 	// printf("pad_length: %ld\n", pad_length);
 	P_len = concatenate(&P, N, l, padding, pad_length); // N || pad(r, len(N))
 	n = P_len / r; // len(P)/r
+	printf("\nn == %d\n", n);
 	/* P = sequence of strings (length of each = r) from 0 to n-1 */
-	printf("\nPadded input message:\n");
-	for (unsigned int ii = 0; ii < P_len/8; ii++) {
-		printf("%0x ", P[ii]);
-	}
-	printf("\n");
 	for (i = 0; i < n; i++) {
-		memcpy(P_i, &P[i * r], r);
+		memcpy(P_i, &P[i * r], r/8);
 		concatenate(&P_i_concat, P_i, r, arr_of_zeros, c); // P_i || 0^c
 		for (j = 0; j < b/8; j++) {
 			S_XOR_P_i_concat[j] = S[j] ^ P_i_concat[j]; // S XOR P_i || 0^c
 		}
-		keccak_p(&S, S_XOR_P_i_concat, l); // f(S XOR (P_i || 0^c))
+
+		keccak_p(&S, S_XOR_P_i_concat, 200); // f(S XOR (P_i || 0^c))
+				// printf("\nS after KECCAK:\n");
+				// for (ii = 0; ii < (unsigned int)b / 8; ii++) {
+				// 	printf("%02x ", S[ii]);
+				// }
+				// printf("\n");
 	}
+
+		ii = 0;
 	while (1) {
-		memcpy(S_Trunc_r, S, r);
-		Z_len = concatenate(&Z, Z, Z_len, S_Trunc_r, r); // Z = Z || Trunc_r(S)
+		memcpy(S_Trunc_r, S, r/8);
+		Z_len = concatenate(Z, (*Z), Z_len, S_Trunc_r, r); // Z = Z || Trunc_r(S)
 		if (d <= Z_len) {
-			Z = (unsigned char *) realloc(Z, d);
+			(*Z) = (unsigned char *) realloc((*Z), d/8);
+					// printf("\nZ:\n");
+					// for (ii = 0; ii < (unsigned int)Z_len/8; ii++) {
+					// 	printf("%02x ", (*Z)[ii]);
+					// }
+					// printf("\n");
 			break;
 		}
-		keccak_p(&S, S, l);
-		// Continue with step 8 
+		memcpy(S_cpy, S, 200);
+		keccak_p(&S, S_cpy, 200);
+		// Continue with step 8
+		ii++;
 	}
-	
 	free(P);
 	free(P_i);
 	free(padding);
@@ -123,20 +167,21 @@ void sponge(unsigned char *Z, unsigned char *N, unsigned int d, int l) {
  * m - the input message
  */
 void create_state_array(unsigned long long (*state_arr)[5][5], const unsigned char *m) {
-	unsigned int x, y, z, w=8, i, m_len=strlen((const char *)m);
+	unsigned int x, y, z, w=8, i;
 	unsigned long long lane;
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 			lane = 0;
 			for (z = 0; z < w; z++) {
-				i = w * (5 * y + x);
-				lane += i < m_len ? ROL64(m[i], z*8) : 0; // chars in m are 8-bit chunks
+				i = w * (5 * y + x) + z;
+				lane += ROL64((unsigned long long) m[i], z*8); // chars in m are 8-bit chunks. Rotate
 			}
+			printf("lane[%d,%d]: %016llx\n", x,y,lane);
 			(*state_arr)[x][y] = lane; //i < m_len ? m[i] : 0;
-			
+
 		}
 	}
-	
+
 }
 
 /* Convert state array to string
@@ -169,7 +214,7 @@ void theta(unsigned long long (*state_arr)[5][5]) {
 			/* Attention! n % y returns negative int, if n < 0 and y > 0! Thus, add y to n to ensure proper behavior! */
 			XOR = ROL64(C[(x - 1 + 5) % 5], w - z) ^ ROL64(C[(x + 1 + 5) % 5], w - (z - 1 + w) % w);
 			XOR &= 1; // Apply bitmask to get only the value for current bit
-			D[x] += ROL64(XOR, z); // Shift XOR value to its proper place 
+			D[x] += ROL64(XOR, z); // Shift XOR value to its proper place
 		}
 	}
 	for (y = 0; y < 5; y++) {
@@ -186,20 +231,20 @@ void rho(unsigned long long (*state_arr)[5][5]) {
 	unsigned char t, z, x = 1, y = 0, tmp, w = 64;
 	unsigned long long state_arr_cpy[5][5], curr_bit;
 	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long long) * 5 * 5);
-	
+
 	for (t = 0; t < 24; t++) {
 		(*state_arr)[x][y] = 0; // let (x,y) = (1,0)
 		for (z = 0; z < w; z++) {
 			/* Attention! n % y returns negative int, if n < 0 and y > 0! Thus, add y to n to ensure proper behavior! */
 			curr_bit = ROL64(state_arr_cpy[x][y], w - ((z - (t + 1)*(t + 2) / 2 + w) % w));
-			curr_bit &= 1; // Mask, to get only the curr_bit 
+			curr_bit &= 1; // Mask, to get only the curr_bit
 			curr_bit = ROL64(curr_bit, z);
 			(*state_arr)[x][y] += curr_bit;
 		}
 		/* let (x,y) = (y, (2x + 3y) mod 5) */
 		tmp = x;
 		x = y;
-		y = (2*tmp + 3*y) % 5;		
+		y = (2*tmp + 3*y) % 5;
 	}
 }
 
@@ -265,10 +310,8 @@ void iota(unsigned long long (*state_arr)[5][5], int i_r) {
 		RC += ROL64(rc(j + 7 * i_r), int_pow(2, j) - 1);
 		//printf(" -> RC + %ld %ld\n", (unsigned long)int_pow(2, int_pow(2,j) - 1) * rc(j + 7 * i_r), RC);
 	}
-	//printf("\nRound constant RC[%d]: %016llx\n", i_r, RC);
-	//printf("\nRC: %016lx \n", RC);
 	(*state_arr)[0][0] ^= RC;
-} 
+}
 
 /* Concatenate two bit strings (X||Y)
  *
