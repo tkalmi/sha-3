@@ -13,6 +13,24 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
 /* You can add your own functions below this line.
  * Do NOT modify anything above. */
  
+
+ 
+/* Implement SPONGE construct to truncate/pad the input string to an output string of
+ * length d
+ * Z - pointer to output string
+ * N - pointer to input string
+ * d - length of output string (in bits)
+ * l - length of N in bits
+ */
+void sponge(unsigned char *Z, unsigned char *N, unsigned int d, int l);
+ 
+/* Implement KECCAK-p[b,n_r](S)
+ * m - input string of length b
+ * S - pointer to KECCAK-modified string
+ * l - length of m
+ */
+void keccak_p(unsigned char (*S)[200], unsigned char *m, int l);
+ 
 /* Populate initial state array with input message
  * state_arr - pointer to state array placeholder
  * m - the input message
@@ -56,12 +74,3 @@ void iota(unsigned long long (*state_arr)[5][5], int i_r);
  * state_arr - state array
  */
  void convert_state_arr_to_str(unsigned char *s_dot, unsigned long long (*state_arr)[5][5]);
- 
- /* Implement SPONGE construct to truncate/pad the input string to an output string of
-  * length d
-  * Z - pointer output string
-  * d - length of output string (in bits)
-  * N - input string
-  * r - rate parameter
-  */
- void sponge(unsigned char *Z, unsigned int d, unsigned char *N, int rate);
