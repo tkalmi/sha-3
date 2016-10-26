@@ -29,16 +29,12 @@ void sha3(uint8_t *d, uint32_t s, const uint8_t *m, uint32_t l)
 
         /* Implement the rest of this function */
 
-        uint8_t *M;//, *sponge_input;
+        uint8_t *M;
 
 
         concatenate_01(&M, m, l); // Concatenate m || 01 as is defined in SHA-3 specs
 
-        // sponge_input = (uint8_t *) calloc(256/8, sizeof(uint8_t));
         sponge(&d, M, s, l+2); // l+2 due to 2 extra bits we concatenated with the input message above
-        // memcpy(d, sponge_input, 256/8);
-        // free(&sponge_input);
-        // free(sponge_input);
         free(M);
 }
 
@@ -89,7 +85,9 @@ void sponge(uint8_t **output, uint8_t *N, uint32_t d, int32_t l) {
                 for (j = 0; j < b/8; j++) {
                         S_XOR[j] = S[j] ^ P_i[j]; // S XOR P_i || 0^c
                 }
+                /* Initially P_i was freed at the end of sponge function with the rest of the variables. However, according to Valgrind, that left a memory leak (I have no idea why though). Luckily, freeing P_i here in every iteration seems to fix the leak. */
                 free(P_i);
+
                 keccak_p(&S, S_XOR); // f(S XOR (P_i || 0^c))
         }
 
@@ -97,7 +95,7 @@ void sponge(uint8_t **output, uint8_t *N, uint32_t d, int32_t l) {
                 memcpy(S_Trunc_r, S, r/8);
                 Z_len = concatenate(&Z, Z, Z_len, S_Trunc_r, r); // Z = Z || Trunc_r(S)
                 if (d <= Z_len) {
-                        memcpy((*output), Z, 256/8);// = (uint8_t *) realloc((*Z), d/8);
+                        memcpy((*output), Z, 256/8);
                         break;
                 }
                 memcpy(S_cpy, S, b/8);
@@ -233,14 +231,14 @@ void chi(uint64_t (*state_arr)[5][5]) {
 }
 
 /* Compute power for integers
- * int32_t n - base
- * int32_t x - exponent
- * return - pow(base, result)
+ * uint32_t base - base
+ * uint32_t exp - exponent
+ * Returns base in the power of exponent
  */
-int32_t int_pow(int32_t n, int32_t x) {
-        int32_t result = 1;
-        for (int32_t i = 0; i < x; i++) {
-                result *= n;
+uint32_t int_pow(int32_t base, uint32_t exp) {
+        uint32_t result = 1, i;
+        for (i = 0; i < exp; i++) {
+                result *= base;
         }
         return result;
 }
@@ -250,7 +248,7 @@ int32_t int_pow(int32_t n, int32_t x) {
  * i_r - round index
  */
 void iota(uint64_t (*state_arr)[5][5], int32_t i_r) {
-        int32_t j, l = 6; // l = log2(w) = log2(64) = 6
+        uint32_t j, l = 6; // l = log2(w) = log2(64) = 6
         uint64_t RC = 0;
         for (j = 0; j <= l; j++) {
                 RC += ROL64(rc(j + 7 * i_r), int_pow(2, j) - 1);

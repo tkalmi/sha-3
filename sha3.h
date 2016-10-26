@@ -24,12 +24,12 @@ void keccak_p(uint8_t (*S)[200], uint8_t *m);
 
 /* Implement SPONGE construct to truncate/pad the input string to an output string of
 * length d
-* Z - pointer to output string
+* output - pointer to output string
 * N - pointer to input string
 * d - length of output string (in bits)
 * l - length of N in bits
 */
-void sponge(uint8_t **Z, uint8_t *N, uint32_t d, int l);
+void sponge(uint8_t **output, uint8_t *N, uint32_t d, int32_t l);
 
 /* Populate initial state array with input message
  * state_arr - pointer to state array placeholder
@@ -64,14 +64,14 @@ void pi(uint64_t (*state_arr)[5][5]);
 void chi(uint64_t (*state_arr)[5][5]);
 
 /* Compute power for integers
- * int n - base
- * int x - exponent
- * return - pow(base, result)
+ * uint32_t base - base
+ * uint32_t exp - exponent
+ * Returns base in the power of exponent
  */
-int int_pow(int n, int x);
+uint32_t int_pow(int32_t base, uint32_t exp);
 
 /* Do iota permutation
  * state_arr - pointer to the state array
  * i_r - round index
  */
-void iota(uint64_t (*state_arr)[5][5], int i_r);
+void iota(uint64_t (*state_arr)[5][5], int32_t i_r);
