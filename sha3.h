@@ -68,10 +68,10 @@ void chi(uint64_t (*state_arr)[5][5]);
  * uint32_t exp - exponent
  * Returns base in the power of exponent
  */
-uint32_t int_pow(int32_t base, uint32_t exp);
+uint32_t int_pow(uint32_t base, uint32_t exp);
 
 /* Do iota permutation
  * state_arr - pointer to the state array
  * i_r - round index
  */
-void iota(uint64_t (*state_arr)[5][5], int32_t i_r);
+void iota(uint64_t (*state_arr)[5][5], uint32_t i_r);

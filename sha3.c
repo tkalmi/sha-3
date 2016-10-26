@@ -235,7 +235,7 @@ void chi(uint64_t (*state_arr)[5][5]) {
  * uint32_t exp - exponent
  * Returns base in the power of exponent
  */
-uint32_t int_pow(int32_t base, uint32_t exp) {
+uint32_t int_pow(uint32_t base, uint32_t exp) {
         uint32_t result = 1, i;
         for (i = 0; i < exp; i++) {
                 result *= base;
@@ -247,7 +247,7 @@ uint32_t int_pow(int32_t base, uint32_t exp) {
  * state_arr - pointer to the state array
  * i_r - round index
  */
-void iota(uint64_t (*state_arr)[5][5], int32_t i_r) {
+void iota(uint64_t (*state_arr)[5][5], uint32_t i_r) {
         uint32_t j, l = 6; // l = log2(w) = log2(64) = 6
         uint64_t RC = 0;
         for (j = 0; j <= l; j++) {
