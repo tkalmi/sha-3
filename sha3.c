@@ -9,10 +9,10 @@
 /* Rotate a 64b word to the left by n positions */
 #define ROL64(a, n) ((((n)%64) != 0) ? ((((uint64_t)a) << ((n)%64)) ^ (((uint64_t)a) >> (64-((n)%64)))) : a)
 
-unsigned long concatenate(unsigned char **Z, const unsigned char *X, unsigned long X_len, const unsigned char *Y, unsigned long Y_len);
-unsigned long concatenate_01(unsigned char **Z, const unsigned char *X, unsigned long X_len);
-unsigned long pad10x1(unsigned char **P, unsigned int x, unsigned int m);
-unsigned char rc(unsigned int t);
+uint32_t concatenate(uint8_t **Z, const uint8_t *X, uint32_t X_len, const uint8_t *Y, uint32_t Y_len);
+uint32_t concatenate_01(uint8_t **Z, const uint8_t *X, uint32_t X_len);
+uint32_t pad10x1(uint8_t **P, uint32_t x, uint32_t m);
+uint8_t rc(uint32_t t);
 
 /* Compute the SHA-3 hash for a message.
  *
@@ -21,7 +21,7 @@ unsigned char rc(unsigned int t);
  * m - the input message
  * l - size of the input message in bits
  */
-void sha3(unsigned char *d, unsigned int s, const unsigned char *m, unsigned int l)
+void sha3(uint8_t *d, uint32_t s, const uint8_t *m, uint32_t l)
 {
 	/* The hash size must be one of the supported ones */
 	if (s != 224 && s != 256 && s != 384 && s != 512)
@@ -29,12 +29,12 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m, unsigned int
 
 	/* Implement the rest of this function */
 
-	unsigned char *M, *sponge_input;
+	uint8_t *M, *sponge_input;
 
 
 	concatenate_01(&M, m, l); // Concatenate m || 01 as is defined in SHA-3 specs
 
-	sponge_input = (unsigned char *)malloc(256/8);
+	sponge_input = (uint8_t *)malloc(256/8);
 	sponge(&sponge_input, M, s, l+2); // l+2 due to 2 extra bits we concatenated with the input message above
 	memcpy(d, sponge_input, 256/8);
 	free(sponge_input);
@@ -44,14 +44,14 @@ void sha3(unsigned char *d, unsigned int s, const unsigned char *m, unsigned int
  * m - input string of length b
  * S - pointer to KECCAK-modified string
  */
-void keccak_p(unsigned char (*S)[200], unsigned char *m) {
-	unsigned long long state_arr[5][5];
+void keccak_p(uint8_t (*S)[200], uint8_t *m) {
+	uint64_t state_arr[5][5];
 	 create_state_array(&state_arr, m); // Populate initial state array with the input message
 
 	 /* n_r - Number of Rnd-function iterations
 	  * i_r - Round index
 	  */
-	 int n_r = 24, i_r, w_log = 6;
+	 int32_t n_r = 24, i_r, w_log = 6;
 	 for (i_r = 12 + 2*w_log - n_r; i_r <= 12 + 2*w_log - 1; i_r++) {
 		theta(&state_arr);
 		rho(&state_arr);
@@ -71,11 +71,11 @@ void keccak_p(unsigned char (*S)[200], unsigned char *m) {
  * d - length of output string (in bits)
  * l - length of N in bits
  */
-void sponge(unsigned char **Z, unsigned char *N, unsigned int d, int l) {
-	int b = 1600, r = 1088, c = 512, n, i, j;
-	unsigned char *padding, *P, *P_i;
-	unsigned char S[200] = {0}, S_cpy[200], arr_of_zeros[64] = {0}, S_XOR[200], S_Trunc_r[1088 / 8];
-	unsigned long pad_length, P_len, Z_len = 0;
+void sponge(uint8_t **Z, uint8_t *N, uint32_t d, int32_t l) {
+	int32_t b = 1600, r = 1088, c = 512, n, i, j;
+	uint8_t *padding, *P, *P_i;
+	uint8_t S[200] = {0}, S_cpy[200], arr_of_zeros[64] = {0}, S_XOR[200], S_Trunc_r[1088 / 8];
+	uint32_t pad_length, P_len, Z_len = 0;
 
 	pad_length = pad10x1(&padding, r, l); // pad(r, len(N))
 	P_len = concatenate(&P, N, l, padding, pad_length); // N || pad(r, len(N))
@@ -95,7 +95,7 @@ void sponge(unsigned char **Z, unsigned char *N, unsigned int d, int l) {
 		memcpy(S_Trunc_r, S, r/8);
 		Z_len = concatenate(Z, (*Z), Z_len, S_Trunc_r, r); // Z = Z || Trunc_r(S)
 		if (d <= Z_len) {
-			(*Z) = (unsigned char *) realloc((*Z), d/8);
+			(*Z) = (uint8_t *) realloc((*Z), d/8);
 			break;
 		}
 		memcpy(S_cpy, S, b/8);
@@ -112,15 +112,15 @@ void sponge(unsigned char **Z, unsigned char *N, unsigned int d, int l) {
  * state_arr - pointer to state array placeholder
  * m - the input message
  */
-void create_state_array(unsigned long long (*state_arr)[5][5], const unsigned char *m) {
-	unsigned int x, y, z, w=8, i;
-	unsigned long long lane;
+void create_state_array(uint64_t (*state_arr)[5][5], const uint8_t *m) {
+	uint32_t x, y, z, w=8, i;
+	uint64_t lane;
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 			lane = 0;
 			for (z = 0; z < w; z++) {
 				i = w * (5 * y + x) + z;
-				lane += ROL64((unsigned long long) m[i], z*8); // chars in m are 8-bit chunks. Rotate
+				lane += ROL64((uint64_t) m[i], z*8); // chars in m are 8-bit chunks. Rotate
 			}
 			// printf("lane[%d,%d]: %016llx\n", x,y,lane);
 			(*state_arr)[x][y] = lane; //i < m_len ? m[i] : 0;
@@ -134,12 +134,12 @@ void create_state_array(unsigned long long (*state_arr)[5][5], const unsigned ch
  * s_dot - pointer to ouput string
  * state_arr - pointer to the state array
  */
- void convert_state_arr_to_str(unsigned char *s_dot, unsigned long long (*state_arr)[5][5]) {
- 	unsigned char i = 0, y, x, z;
+ void convert_state_arr_to_str(uint8_t *s_dot, uint64_t (*state_arr)[5][5]) {
+ 	uint8_t i = 0, y, x, z;
  	for (y = 0; y < 5; y++) {
  		for (x = 0; x < 5; x++) {
  			for (z = 0; z < 8; z++) {
-				s_dot[i] = (unsigned char) (ROL64((*state_arr)[x][y], 64 - z * 8) & (unsigned long long) 255);
+				s_dot[i] = (uint8_t) (ROL64((*state_arr)[x][y], 64 - z * 8) & (uint64_t) 255);
 				i++;
  			}
  		}
@@ -149,9 +149,9 @@ void create_state_array(unsigned long long (*state_arr)[5][5], const unsigned ch
 /* Do theta permutation
  * state_arr - pointer to the state array
  */
-void theta(unsigned long long (*state_arr)[5][5]) {
-	int x, y, z, w=64;
-	unsigned long long C[5],  D[5] = {0}, XOR;
+void theta(uint64_t (*state_arr)[5][5]) {
+	int32_t x, y, z, w=64;
+	uint64_t C[5],  D[5] = {0}, XOR;
 	for (x = 0; x < 5; x++) {
 			C[x] = (*state_arr)[x][0] ^ (*state_arr)[x][1] ^ (*state_arr)[x][2] ^ (*state_arr)[x][3] ^ (*state_arr)[x][4];
 	}
@@ -173,10 +173,10 @@ void theta(unsigned long long (*state_arr)[5][5]) {
 /* Do rho permutation
  * state_arr - pointer to the state array
  */
-void rho(unsigned long long (*state_arr)[5][5]) {
-	unsigned char t, z, x = 1, y = 0, tmp, w = 64;
-	unsigned long long state_arr_cpy[5][5], curr_bit;
-	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long long) * 5 * 5);
+void rho(uint64_t (*state_arr)[5][5]) {
+	uint8_t t, z, x = 1, y = 0, tmp, w = 64;
+	uint64_t state_arr_cpy[5][5], curr_bit;
+	memcpy(state_arr_cpy, *state_arr, sizeof(uint64_t) * 5 * 5);
 
 	for (t = 0; t < 24; t++) {
 		(*state_arr)[x][y] = 0; // let (x,y) = (1,0)
@@ -197,10 +197,10 @@ void rho(unsigned long long (*state_arr)[5][5]) {
 /* Do pi permutation
  * state_arr - pointer to the state array
  */
-void pi(unsigned long long (*state_arr)[5][5]) {
-	unsigned char x, y;
-	unsigned long long state_arr_cpy[5][5];
-	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long long) * 5 * 5);
+void pi(uint64_t (*state_arr)[5][5]) {
+	uint8_t x, y;
+	uint64_t state_arr_cpy[5][5];
+	memcpy(state_arr_cpy, *state_arr, sizeof(uint64_t) * 5 * 5);
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 				(*state_arr)[x][y] = state_arr_cpy[(x + 3 * y) % 5][x];
@@ -211,12 +211,12 @@ void pi(unsigned long long (*state_arr)[5][5]) {
 /* Do chi permutation
  * state_arr - pointer to the state array
  */
-void chi(unsigned long long (*state_arr)[5][5]) {
-	unsigned char x, y, z, w = 64;
-	unsigned long long long_1 = 1; // Create 64 bit 1
-	unsigned long long first_term, second_term, third_term;
-	unsigned long long state_arr_cpy[5][5];
-	memcpy(state_arr_cpy, *state_arr, sizeof(unsigned long long) * 5 * 5);
+void chi(uint64_t (*state_arr)[5][5]) {
+	uint8_t x, y, z, w = 64;
+	uint64_t long_1 = 1; // Create 64 bit 1
+	uint64_t first_term, second_term, third_term;
+	uint64_t state_arr_cpy[5][5];
+	memcpy(state_arr_cpy, *state_arr, sizeof(uint64_t) * 5 * 5);
 	for (y = 0; y < 5; y++) {
 		for (x = 0; x < 5; x++) {
 			(*state_arr)[x][y] = 0;
@@ -231,13 +231,13 @@ void chi(unsigned long long (*state_arr)[5][5]) {
 }
 
 /* Compute power for integers
- * int n - base
- * int x - exponent
+ * int32_t n - base
+ * int32_t x - exponent
  * return - pow(base, result)
  */
-int int_pow(int n, int x) {
-	int result = 1;
-	for (int i = 0; i < x; i++) {
+int32_t int_pow(int32_t n, int32_t x) {
+	int32_t result = 1;
+	for (int32_t i = 0; i < x; i++) {
 		result *= n;
 	}
 	return result;
@@ -247,9 +247,9 @@ int int_pow(int n, int x) {
  * state_arr - pointer to the state array
  * i_r - round index
  */
-void iota(unsigned long long (*state_arr)[5][5], int i_r) {
-	int j, l = 6; // l = log2(w) = log2(64) = 6
-	unsigned long long RC = 0;
+void iota(uint64_t (*state_arr)[5][5], int32_t i_r) {
+	int32_t j, l = 6; // l = log2(w) = log2(64) = 6
+	uint64_t RC = 0;
 	for (j = 0; j <= l; j++) {
 		RC += ROL64(rc(j + 7 * i_r), int_pow(2, j) - 1);
 	}
@@ -268,30 +268,30 @@ void iota(unsigned long long (*state_arr)[5][5], int i_r) {
  * Returns the length of the output string in bits. The length in Bytes of the
  * output C array is ceiling(output_bit_len/8).
  */
-unsigned long concatenate(unsigned char **Z, const unsigned char *X,
-			  unsigned long X_len, const unsigned char *Y,
-			  unsigned long Y_len)
+uint32_t concatenate(uint8_t **Z, const uint8_t *X,
+			  uint32_t X_len, const uint8_t *Y,
+			  uint32_t Y_len)
 {
 	/* The bit length of Z: the sum of X_len and Y_len */
-	unsigned long Z_bit_len = X_len + Y_len;
+	uint32_t Z_bit_len = X_len + Y_len;
 	/* The byte length of Z:
 	 * the least multiple of 8 greater than X_len + Y_len */
-	unsigned long Z_byte_len = (Z_bit_len / 8) + (Z_bit_len % 8 ? 1 : 0);
+	uint32_t Z_byte_len = (Z_bit_len / 8) + (Z_bit_len % 8 ? 1 : 0);
 	// Allocate the output string and initialize it to 0
-	*Z = calloc(Z_byte_len, sizeof(unsigned char));
+	*Z = calloc(Z_byte_len, sizeof(uint8_t));
 	if (*Z == NULL)
 		return 0;
 	// Copy X_len/8 bytes from X to Z
 	memcpy(*Z, X, X_len / 8);
 	// Copy X_len%8 bits from X to Z
-	for (unsigned int i = 0; i < X_len % 8; i++) {
+	for (uint32_t i = 0; i < X_len % 8; i++) {
 		(*Z)[X_len / 8] |= (X[X_len / 8] & (1 << i));
 	}
 	// Copy Y_len bits from Y to Z
-	unsigned long Z_byte_cursor = X_len / 8, Z_bit_cursor = X_len % 8;
-	unsigned long Y_byte_cursor = 0, Y_bit_cursor = 0;
-	unsigned int v;
-	for (unsigned long i = 0; i < Y_len; i++) {
+	uint32_t Z_byte_cursor = X_len / 8, Z_bit_cursor = X_len % 8;
+	uint32_t Y_byte_cursor = 0, Y_bit_cursor = 0;
+	uint32_t v;
+	for (uint32_t i = 0; i < Y_len; i++) {
 		// Get the bit
 		v = ((Y[Y_byte_cursor] >> Y_bit_cursor) & 1);
 		// Set the bit
@@ -319,14 +319,14 @@ unsigned long concatenate(unsigned char **Z, const unsigned char *X,
  * Returns the length of the output string in bits. The length in Bytes of the
  * output C array is ceiling(output_bit_len/8).
  */
-unsigned long concatenate_01(unsigned char **Z, const unsigned char *X,
-			     unsigned long X_len)
+uint32_t concatenate_01(uint8_t **Z, const uint8_t *X,
+			     uint32_t X_len)
 {
 	/* Due to the SHA-3 bit string representation convention, the 01
 	 * bit string is represented in hexadecimal as 0x02.
 	 * See Appendix B.1 of the Standard.
 	 */
-	unsigned char zeroone[] = { 0x02 };
+	uint8_t zeroone[] = { 0x02 };
 	return concatenate(Z, X, X_len, zeroone, 2);
 }
 
@@ -339,16 +339,16 @@ unsigned long concatenate_01(unsigned char **Z, const unsigned char *X,
  *
  * Returns the length in bits of the output bit string.
  */
-unsigned long pad10x1(unsigned char **P, unsigned int x, unsigned int m)
+uint32_t pad10x1(uint8_t **P, uint32_t x, uint32_t m)
 {
 	/* 1. j = (-m-2) mod x */
 	long j = x - ((m + 2) % x);
 	/* 2. P = 1 || zeroes(j) || 1 */
 	// Compute P bit and byte length
-	unsigned long P_bit_len = 2 + j;
-	unsigned long P_byte_len = (P_bit_len / 8) + (P_bit_len % 8 ? 1 : 0);
+	uint32_t P_bit_len = 2 + j;
+	uint32_t P_byte_len = (P_bit_len / 8) + (P_bit_len % 8 ? 1 : 0);
 	// Allocate P and initialize to 0
-	*P = calloc(P_byte_len, sizeof(unsigned char));
+	*P = calloc(P_byte_len, sizeof(uint8_t));
 	if (*P == NULL)
 		return 0;
 	// Set the 1st bit of P to 1
@@ -363,19 +363,19 @@ unsigned long pad10x1(unsigned char **P, unsigned int x, unsigned int m)
  *
  * t - the number of rounds to perform in the LFSR
  *
- * Returns a single bit stored as the LSB of an unsigned char.
+ * Returns a single bit stored as the LSB of an uint8_t.
  */
-unsigned char rc(unsigned int t)
+uint8_t rc(uint32_t t)
 {
-	unsigned int tmod = t % 255;
+	uint32_t tmod = t % 255;
 	/* 1. If t mod255 = 0, return 1 */
 	if (tmod == 0)
 		return 1;
 	/* 2. Let R = 10000000
 	 *    The LSB is on the right: R[0] = R &0x80, R[8] = R &1 */
-	unsigned char R = 0x80, R0;
+	uint8_t R = 0x80, R0;
 	/* 3. For i from 1 to t mod 255 */
-	for (unsigned int i = 1; i <= tmod; i++) {
+	for (uint32_t i = 1; i <= tmod; i++) {
 		/* a. R = 0 || R */
 		R0 = 0;
 		/* b. R[0] ^= R[8] */
