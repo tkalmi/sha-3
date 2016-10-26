@@ -8,8 +8,8 @@
  * m - the input message
  * l - size of the input message in bits
  */
-void sha3(uint8_t *d, uint32_t s, const uint8_t *m,
-	  uint32_t l);
+ void sha3(unsigned char *d, unsigned int s, const unsigned char *m,
+ 	  unsigned int l);
 
 /* You can add your own functions below this line.
  * Do NOT modify anything above. */
