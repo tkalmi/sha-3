@@ -89,7 +89,7 @@ void sponge(uint8_t **output, uint8_t *N, uint32_t d, int32_t l) {
                 for (j = 0; j < b/8; j++) {
                         S_XOR[j] = S[j] ^ P_i[j]; // S XOR P_i || 0^c
                 }
-
+                free(P_i);
                 keccak_p(&S, S_XOR); // f(S XOR (P_i || 0^c))
         }
 
@@ -107,7 +107,6 @@ void sponge(uint8_t **output, uint8_t *N, uint32_t d, int32_t l) {
         /* Free dynamically allocated memory */
         free(Z);
         free(P);
-        free(P_i);
         free(padding);
 }
 
