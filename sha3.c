@@ -29,15 +29,16 @@ void sha3(uint8_t *d, uint32_t s, const uint8_t *m, uint32_t l)
 
         /* Implement the rest of this function */
 
-        uint8_t *M, *sponge_input;
+        uint8_t *M;//, *sponge_input;
 
 
         concatenate_01(&M, m, l); // Concatenate m || 01 as is defined in SHA-3 specs
 
-        sponge_input = (uint8_t *) calloc(256/8, sizeof(uint8_t));
-        sponge(&sponge_input, M, s, l+2); // l+2 due to 2 extra bits we concatenated with the input message above
-        memcpy(d, sponge_input, 256/8);
-        free(sponge_input);
+        // sponge_input = (uint8_t *) calloc(256/8, sizeof(uint8_t));
+        sponge(&d, M, s, l+2); // l+2 due to 2 extra bits we concatenated with the input message above
+        // memcpy(d, sponge_input, 256/8);
+        // free(&sponge_input);
+        // free(sponge_input);
         free(M);
 }
 
@@ -67,14 +68,14 @@ void keccak_p(uint8_t (*S)[200], uint8_t *m) {
 
 /* Implement SPONGE construct to truncate/pad the input string to an output string of
  * length d
- * Z - pointer to output string
+ * output - pointer to output string
  * N - pointer to input string
  * d - length of output string (in bits)
  * l - length of N in bits
  */
-void sponge(uint8_t **Z, uint8_t *N, uint32_t d, int32_t l) {
+void sponge(uint8_t **output, uint8_t *N, uint32_t d, int32_t l) {
         int32_t b = 1600, r = 1088, c = 512, n, i, j;
-        uint8_t *padding, *P, *P_i;
+        uint8_t *padding, *P, *P_i, *Z;
         uint8_t S[200] = {0}, S_cpy[200], arr_of_zeros[64] = {0}, S_XOR[200], S_Trunc_r[1088 / 8];
         uint32_t pad_length, P_len, Z_len = 0;
 
@@ -94,9 +95,9 @@ void sponge(uint8_t **Z, uint8_t *N, uint32_t d, int32_t l) {
 
         while (1) {
                 memcpy(S_Trunc_r, S, r/8);
-                Z_len = concatenate(Z, (*Z), Z_len, S_Trunc_r, r); // Z = Z || Trunc_r(S)
+                Z_len = concatenate(&Z, Z, Z_len, S_Trunc_r, r); // Z = Z || Trunc_r(S)
                 if (d <= Z_len) {
-                        (*Z) = (uint8_t *) realloc((*Z), d/8);
+                        memcpy((*output), Z, 256/8);// = (uint8_t *) realloc((*Z), d/8);
                         break;
                 }
                 memcpy(S_cpy, S, b/8);
@@ -104,6 +105,7 @@ void sponge(uint8_t **Z, uint8_t *N, uint32_t d, int32_t l) {
                 // Continue with step 8
         }
         /* Free dynamically allocated memory */
+        free(Z);
         free(P);
         free(P_i);
         free(padding);
