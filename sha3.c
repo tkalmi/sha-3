@@ -34,7 +34,7 @@ void sha3(uint8_t *d, uint32_t s, const uint8_t *m, uint32_t l)
 
         concatenate_01(&M, m, l); // Concatenate m || 01 as is defined in SHA-3 specs
 
-        sponge_input = (uint8_t *)malloc(256/8);
+        sponge_input = (uint8_t *) calloc(256/8, sizeof(uint8_t));
         sponge(&sponge_input, M, s, l+2); // l+2 due to 2 extra bits we concatenated with the input message above
         memcpy(d, sponge_input, 256/8);
         free(sponge_input);
